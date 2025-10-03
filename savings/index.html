@@ -1,0 +1,376 @@
+<section id="savings-estimator" class="container my-5">
+  <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root{ --accent:#994A80; --highlight:#F18815; --tile-border:#e5e7eb00; }
+    body{ font-family:'Quicksand',sans-serif; }
+
+    #savings-estimator{ letter-spacing:.2px; }
+    #savings-estimator .label{ letter-spacing:.3px; }
+    #savings-estimator .left .panel { position: relative; } /* contains the FAB */
+    html, body { overflow: hidden; } /* avoid inner scrollbars when embedded */
+
+    .wrap{display:flex;gap:32px;align-items:flex-start}
+    .left {flex:1 1 66%}
+    .right{flex:0 0 34%}
+    .panel{background:#f3f4f6;border-radius:12px;padding:24px}
+    @media (min-width:576px){.panel{padding:32px}}
+    .left .panel h4{margin:0 0 12px;font-weight:700;font-size:1.35rem}
+    .muted{color:#667085;font-size:.95rem}
+
+    .apps-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:16px}
+    @media (max-width:1200px){.apps-grid{grid-template-columns:repeat(5,1fr)}}
+    @media (max-width:992px){ .apps-grid{grid-template-columns:repeat(4,1fr)}}
+    @media (max-width:768px){ .apps-grid{grid-template-columns:repeat(3,1fr)}}
+    @media (max-width:520px){ .apps-grid{grid-template-columns:repeat(2,1fr)}}
+
+    .tile{position:relative;background:#fff;border:2px solid var(--tile-border);border-radius:6px;padding:10px 8px 8px;text-align:center;cursor:pointer;transition:border-color .15s,transform .05s;overflow:visible;display:flex;flex-direction:column;justify-content:center;aspect-ratio:1/1;}
+    .tile:hover{transform:translateY(-1px)}
+    .tile.active{border-color:var(--accent)}
+    .tile img{width:56px;height:56px;object-fit:contain;display:block;margin:2px auto 10px;background:transparent;border-radius:4px;box-shadow:none}
+    .tile .label{font-weight:700;font-size:.86rem;color:#344054;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .tile .badge{position:absolute;right:-8px;top:-8px;width:22px;height:22px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;transform:scale(0);transition:transform .12s;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+    .tile.active .badge{transform:scale(1)}
+
+    .users-head{display:flex;align-items:center;justify-content:space-between;margin-top:18px}
+
+    /* FAB: centered + / − built with pseudo-elements */
+    #savings-estimator .btn-adv{
+      position:absolute;bottom:20px;right:20px;z-index:10;
+      width:50px;height:50px;border:none;border-radius:50%;
+      background:var(--accent);color:#fff;cursor:pointer;
+      display:none;align-items:center;justify-content:center;
+      box-shadow:0 4px 12px rgba(0,0,0,.2);
+      font-size:0; line-height:0; /* hide text baseline */
+    }
+    #savings-estimator .btn-adv.show{display:flex;}
+    #savings-estimator .btn-adv::before{
+      content:""; position:absolute; left:50%; top:50%;
+      width:22px; height:3px; background:#fff; border-radius:2px;
+      transform:translate(-50%,-50%);
+    }
+    #savings-estimator .btn-adv::after{
+      content:""; position:absolute; left:50%; top:50%;
+      width:3px; height:22px; background:#fff; border-radius:2px;
+      transform:translate(-50%,-50%);
+      transition:opacity .15s ease;
+    }
+    /* minus state hides the vertical bar */
+    #savings-estimator .btn-adv[aria-expanded="true"]::after{ opacity:0; }
+
+    .advanced{display:none;margin-top:8px}
+    .advanced.open{display:block}
+    .inline-inputs{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    .inline-inputs .field{display:flex;align-items:center;gap:6px;background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:8px 10px}
+    .inline-inputs input{width:120px;border:none;outline:none;font-weight:600}
+
+    .controls{display:flex;align-items:center;gap:10px;margin-top:8px}
+    .btn-round{background:#fff;color:var(--accent);border:1px solid #e5e7eb;border-radius:12px;width:56px;height:48px;font-size:26px;font-weight:900;display:inline-flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.08)}
+    .user-input{width:120px;height:48px;text-align:center;font-weight:700;border:2px solid var(--accent);background:#fff;border-radius:10px;font-size:18px}
+
+    .right .ticket{background:#fff;border:1px solid #e6e6eb;border-radius:12px;padding:18px 16px}
+    .ticket h4{margin:0}
+    .subhead{display:flex;align-items:center;justify-content:space-between;margin-top:4px;color:#667085;font-size:.95rem}
+    .sep{height:2px;background:repeating-linear-gradient(to right,#d7d9df 0 14px,transparent 14px 22px);margin:14px 0 18px}
+    .list{list-style:none;padding:0;margin:0}
+    .list li{display:flex;align-items:center;justify-content:space-between;padding:6px 0;font-size:.98rem}
+    .list .rule{color:#475467;font-weight:600;white-space:nowrap;margin-left:12px}
+    .totline{display:flex;align-items:center;justify-content:space-between;font-weight:800;font-size:1.05rem;margin:8px 0 10px}
+    .savings-wrap{text-align:center}
+    .savings-title{font-size:2rem;margin:.6rem 0 .2rem;font-weight:800}
+    .savings-pill{display:inline-block;padding:10px 14px;font-size:2rem;font-weight:900;background:var(--highlight);border-radius:0;color:#fff}
+    .small{color:#475467;font-size:.92rem}
+
+    /* Checkbox reuse */
+    #pro-plan-card .addon-toggle{display:flex;align-items:center;gap:8px}
+    #pro-plan-card .addon-toggle input[type="checkbox"]{appearance:none;-webkit-appearance:none;-moz-appearance:none;width:20px;height:20px;border:3px solid #994A80;border-radius:3px;background:#fff;cursor:pointer;position:relative;flex-shrink:0;transition:background-color .2s ease,border-color .2s ease}
+    #pro-plan-card .addon-toggle input[type="checkbox"]:checked{background:#994A80;border-color:#994A80}
+    #pro-plan-card .addon-toggle input[type="checkbox"]:checked::after{content:'✓';color:#fff;font-size:14px;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);line-height:1}
+    #pro-plan-card .addon-toggle label{cursor:pointer;font-size:.95rem;user-select:none}
+
+    /* Discount row in Falinwa orange */
+    #savings-estimator .list li.discount,
+    #savings-estimator .list li.discount .rule{color:var(--highlight);font-weight:800}
+  </style>
+
+  <div class="wrap">
+    <div class="left">
+      <div class="panel">
+        <h4>Which apps do you use?</h4>
+        <div id="appsGrid" class="apps-grid"></div>
+
+        <div class="users-head"><h4 style="margin:0">How many users?</h4></div>
+        <div class="controls">
+          <button class="btn-round" id="btnMinus" aria-label="Remove one">−</button>
+          <input id="userCount" class="user-input" type="number" min="1" value="20">
+          <button class="btn-round" id="btnPlus"  aria-label="Add one">+</button>
+        </div>
+
+        <button id="btnAdvanced" class="btn-adv" aria-expanded="false" aria-controls="advancedBox" aria-label="Open advanced settings">+</button>
+
+        <div id="advancedBox" class="advanced" role="region">
+          <div class="inline-inputs" style="margin-top:8px">
+            <div class="field"><span>Tickets / month</span><input type="number" id="ticketsPerMonth" value="100" min="0" step="10"></div>
+            <div class="field"><span>Avg ticket €</span><input type="number" id="avgTicketPrice" value="50" min="0" step="1"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="right">
+      <div class="ticket" id="pro-plan-card">
+        <!-- 1) Apps to replace -->
+        <h4>Apps to replace</h4>
+        <div class="subhead"><span>for <b id="usersLabel">20</b> users</span><span>/ month</span></div>
+        <div class="sep"></div>
+        <ul id="selectedList" class="list"></ul>
+        <div class="totline"><span>Apps total</span><span><b id="appsMonthly">€0.00</b></span></div>
+        <div class="sep" style="margin-top:10px"></div>
+
+        <!-- 2) Price with us -->
+        <h4>Price with us</h4>
+        <div class="subhead"><span>Odoo + Odoo.sh <span class="muted">(+ optional Cluedoo)</span></span><span>/ month</span></div>
+        <div class="sep"></div>
+
+        <div class="addon-toggle" style="margin-bottom:8px">
+          <input type="checkbox" id="toggleCluedoo" aria-label="Include Cluedoo">
+          <label for="toggleCluedoo"><b>Include Cluedoo</b> <span class="muted">(€24.90 / user)</span></label>
+        </div>
+
+        <ul id="withUsList" class="list"></ul>
+        <div class="totline"><span>Total with us </span><span><b id="withUsMonthly">€0.00</b></span></div>
+
+        <div class="sep" style="margin-top:10px"></div>
+
+        <!-- 3) Savings -->
+        <div class="totline"><span>Monthly savings</span><span><b id="savingsMonthly">€0.00</b></span></div>
+        <div class="savings-wrap">
+          <div class="savings-title">Your savings</div>
+          <div class="savings-pill" id="savingsYearly">€0.00 / year</div>
+          <p class="small mt-2">For a fully-integrated software.</p>
+        </div>
+
+        <div class="sep" style="margin-top:16px"></div>
+        <div class="muted">Est. profit / user / month: <b id="profitPerUser">€0</b></div>
+        <div class="muted">Est. total profit / month: <b id="profitTotal">€0</b></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function(){
+      const CURRENCY = "€";
+      function revenuePerUser(u){ return 20 + 2*u; }
+      const PROFIT_B = 1358, PROFIT_C = 0.07767;
+      function profitPerUser(u){ if(u<1) u=1; return 4258 - PROFIT_B * Math.exp(-PROFIT_C*u); }
+      function fmtEUR(v){ return CURRENCY + v.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}); }
+
+      const APPS = [
+        { id:'asana',label:'Project',icon:'asana.svg',type:'per_user',rate:20,ruleText:'€ 20 / user' },
+        { id:'quickbooks',label:'Accounting',icon:'quickbooks.svg',type:'flat',base:76,ruleText:'€ 76' },
+        { id:'shopify',label:'eCommerce',icon:'shopify.svg',type:'special',calc:(ctx)=> 0.01*ctx.revenue + 79,ruleText:'1% Revenue + € 79' },
+        { id:'salesforce',label:'CRM',icon:'salesforce.svg',type:'per_user',rate:165,ruleText:'€ 165 / user' },
+        { id:'slack',label:'Discuss',icon:'slack.svg',type:'per_user',rate:14.10,ruleText:'€ 14.10 / user' },
+        { id:'notion',label:'Knowledge',icon:'notion.svg',type:'per_user',rate:14,ruleText:'€ 14 / user' },
+        { id:'bamboohr',label:'HR',icon:'bamboohr.svg',type:'per_user',rate:40,ruleText:'€ 40 / user' },
+        { id:'docusign',label:'Sign',icon:'docusign.svg',type:'per_user',rate:38,ruleText:'€ 38 / user' },
+        { id:'inflow',label:'Inventory',icon:'inflow.svg',type:'flat',base:349,ruleText:'€ 349' },
+        { id:'wordpress',label:'Website',icon:'wordpress.svg',type:'flat',base:25,ruleText:'€ 25' },
+        { id:'sharepoint',label:'Documents',icon:'sharepoint.svg',type:'per_user',rate:12.5,ruleText:'€ 12.5 / user' },
+        { id:'lightspeed',label:'PoS',icon:'lightspeed.svg',type:'special',calc:(ctx)=> 120 + 29 * Math.ceil(ctx.users/5),ruleText:'€ 120 + € 29 / 5 users' },
+        { id:'expensify',label:'Expenses',icon:'expensify.svg',type:'per_user',rate:9,ruleText:'€ 9 / user' },
+        { id:'calendly',label:'Appointment',icon:'calendly.svg',type:'per_user',rate:16,ruleText:'€ 16 / user' },
+        { id:'coupa',label:'Purchase',icon:'coupa.svg',type:'flat',base:2500,ruleText:'€ 2500' },
+        { id:'hootsuite',label:'Social',icon:'hootsuite.svg',type:'flat',base:249,ruleText:'€ 249' },
+        { id:'clickup',label:'Planning',icon:'clickup.svg',type:'per_user',rate:12,ruleText:'€ 12 / user' },
+        { id:'hubspot',label:'Emailing',icon:'hubspot.svg',type:'per_user',rate:90,ruleText:'€ 90 / user' },
+        { id:'harvest',label:'Timesheet',icon:'harvest.svg',type:'per_user',rate:14,ruleText:'€ 14 / user' },
+        { id:'zendesk',label:'Helpdesk',icon:'zendesk.svg',type:'per_user',rate:115,ruleText:'€ 115 / user' },
+        { id:'eventbrite',label:'Events',icon:'eventbrite.svg',type:'special',calc:(ctx)=> 0.037*ctx.tickets*ctx.avgTicket + 1.79*ctx.tickets,ruleText:'€ 1.79 + 3.7% / ticket' },
+        { id:'katanamrp',label:'MRP',icon:'katanamrp.svg',type:'flat',base:359,ruleText:'€ 359' },
+        { id:'booqable',label:'Rental',icon:'booqable.svg',type:'special',calc:(ctx)=> 79 + 20*ctx.users,ruleText:'€ 79 + € 20 / user' },
+      ];
+      const DEFAULT_SELECTED = new Set(['asana','quickbooks','salesforce','slack','notion','wordpress']);
+
+      // Odoo/Odoo.sh/Cluedoo constants
+      const ODOO_ALL_APPS_PER_USER = 37.40;
+      const ODOO_SH_WORKER_PER_25  = 48.00;
+      const ODOO_SH_STORAGE_PER_U  = 0.16;
+      const ODOO_SH_STAGING_FLAT   = 24.00;
+      const CLUEDOO_PER_USER       = 24.90;
+      const ODOO_DISCOUNT_RATE     = 0.15;   // 15% first year
+
+      // DOM
+      const appsGrid   = document.getElementById('appsGrid');
+      const selectedEl = document.getElementById('selectedList');
+      const usersInput = document.getElementById('userCount');
+      const btnMinus   = document.getElementById('btnMinus');
+      const btnPlus    = document.getElementById('btnPlus');
+      const usersLabel = document.getElementById('usersLabel');
+      const ticketsPerMonth = document.getElementById('ticketsPerMonth');
+      const avgTicketPrice  = document.getElementById('avgTicketPrice');
+
+      const withUsList       = document.getElementById('withUsList');
+      const appsMonthlyEl    = document.getElementById('appsMonthly');
+      const withUsMonthlyEl  = document.getElementById('withUsMonthly');
+      const savingsMonthlyEl = document.getElementById('savingsMonthly');
+
+      const totalYearlyEl   = document.getElementById('savingsYearly');
+      const profitPerUserEl = document.getElementById('profitPerUser');
+      const profitTotalEl   = document.getElementById('profitTotal');
+
+      const advBtn          = document.getElementById('btnAdvanced');
+      const advBox          = document.getElementById('advancedBox');
+      const toggleCluedoo   = document.getElementById('toggleCluedoo');
+
+      const state = {
+        users: parseInt(usersInput.value,10) || 20,
+        revenue: 0,
+        tickets: parseFloat(ticketsPerMonth.value)||100,
+        avgTicket: parseFloat(avgTicketPrice.value)||50,
+        selected: new Set(DEFAULT_SELECTED),
+        includeCluedoo: false,
+      };
+
+      function updateAdvancedToggle(){
+        if (state.selected.has('eventbrite')) {
+          advBtn.classList.add('show');
+        } else {
+          advBtn.classList.remove('show');
+          advBox.classList.remove('open');
+          advBtn.setAttribute('aria-expanded','false');
+        }
+        sendHeight();
+      }
+
+      advBtn.addEventListener('click', ()=>{
+        const open = advBox.classList.toggle('open');
+        advBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+        advBtn.setAttribute('aria-label', open ? 'Close advanced settings' : 'Open advanced settings');
+        sendHeight();
+      });
+
+      function renderTiles(){
+        appsGrid.innerHTML = '';
+        APPS.forEach(app=>{
+          const tile = document.createElement('div');
+          tile.className = 'tile' + (state.selected.has(app.id) ? ' active' : '');
+          tile.dataset.id = app.id;
+          tile.innerHTML = `<span class="badge">✓</span><img src="icons/${app.icon}" alt="${app.label}"><div class="label">${app.label}</div>`;
+          tile.addEventListener('click', ()=>{
+            if(state.selected.has(app.id)) state.selected.delete(app.id); else state.selected.add(app.id);
+            tile.classList.toggle('active'); recalc();
+          });
+          appsGrid.appendChild(tile);
+        });
+        updateAdvancedToggle();
+      }
+
+      function appMonthlyCost(app, ctx){
+        switch(app.type){
+          case 'per_user': return app.rate * ctx.users;
+          case 'flat':     return app.base;
+          case 'special':  return app.calc(ctx);
+          default:         return 0;
+        }
+      }
+
+      function withUsBreakdown(users, includeCluedoo){
+        const workers = Math.ceil(users/25);
+        const odooAll     = ODOO_ALL_APPS_PER_USER * users;
+        const discount    = odooAll * ODOO_DISCOUNT_RATE;  // 15% first year
+        const odooWorkers = ODOO_SH_WORKER_PER_25 * workers;
+        const odooStorage = ODOO_SH_STORAGE_PER_U * users;
+        const odooStaging = ODOO_SH_STAGING_FLAT;
+        const cluedoo     = includeCluedoo ? CLUEDOO_PER_USER * users : 0;
+
+        const items = [
+          { name:'Odoo (All Apps)',  rule:'€ 37.40 / user' },
+          { name:'First Year Initial Discount', rule:`− ${fmtEUR(discount)}`, discount:true },
+          { name:'Odoo.sh Workers',  rule:'€ 48 per 25 users' },
+          { name:'Odoo.sh Storage',  rule:'€ 0.16 / user' },
+          { name:'Odoo.sh Staging',  rule:'€ 24' },
+        ];
+        if(includeCluedoo){
+          items.splice(4,0,{ name:'Cluedoo', rule:'€ 24.90 / user' });
+        }
+
+        const total = (odooAll + odooWorkers + odooStorage + odooStaging + cluedoo) - discount;
+        return { items, total };
+      }
+
+      // --- iframe auto-resize: child sends height to parent ---
+      function sendHeight(){
+        try {
+          window.parent.postMessage(
+            { type: "resize-savings-iframe", height: document.documentElement.scrollHeight },
+            "*"
+          );
+        } catch (e) { /* noop */ }
+      }
+
+      function recalc(){
+        // revenue context
+        const perUser = revenuePerUser(state.users);
+        state.revenue = perUser * state.users;
+        const ctx = { users: state.users, revenue: state.revenue, tickets: state.tickets, avgTicket: state.avgTicket };
+
+        // Apps to replace
+        selectedEl.innerHTML = '';
+        let totalMonthlyApps = 0;
+        APPS.forEach(app=>{
+          if(!state.selected.has(app.id)) return;
+          totalMonthlyApps += appMonthlyCost(app, ctx);
+          const li = document.createElement('li');
+          li.innerHTML = `<span>${app.label}</span><span class="rule">${app.ruleText}</span>`;
+          selectedEl.appendChild(li);
+        });
+
+        // With us (incl. discount)
+        const breakdown = withUsBreakdown(state.users, state.includeCluedoo);
+        withUsList.innerHTML = '';
+        breakdown.items.forEach(it=>{
+          const li = document.createElement('li');
+          li.className = it.discount ? 'discount' : '';
+          li.innerHTML = `<span>${it.name}</span><span class="rule">${it.rule}</span>`;
+          withUsList.appendChild(li);
+        });
+
+        // Totals & Savings
+        appsMonthlyEl.textContent   = fmtEUR(totalMonthlyApps);
+        withUsMonthlyEl.textContent = fmtEUR(breakdown.total);
+
+        const savingsMonthly = totalMonthlyApps - breakdown.total;
+        savingsMonthlyEl.textContent = fmtEUR(savingsMonthly);
+        totalYearlyEl.textContent = fmtEUR(savingsMonthly * 12) + ' / year';
+
+        usersLabel.textContent = state.users.toString();
+
+        const ppu = profitPerUser(state.users);
+        profitPerUserEl.textContent = fmtEUR(ppu);
+        profitTotalEl.textContent   = fmtEUR(ppu * state.users);
+
+        updateAdvancedToggle();
+        sendHeight(); // reflect any height change
+      }
+
+      usersInput.addEventListener('change', ()=>{ state.users = Math.max(1, parseInt(usersInput.value||'1',10)); usersInput.value = state.users; recalc(); });
+      btnMinus.addEventListener('click', (e)=>{ e.preventDefault(); if(state.users>1){ state.users--; usersInput.value=state.users; recalc(); }});
+      btnPlus .addEventListener('click',  (e)=>{ e.preventDefault(); state.users++; usersInput.value=state.users; recalc(); });
+
+      ticketsPerMonth.addEventListener('input', ()=>{ state.tickets = parseFloat(ticketsPerMonth.value)||0; recalc(); });
+      avgTicketPrice .addEventListener('input', ()=>{ state.avgTicket = parseFloat(avgTicketPrice.value)||0; recalc(); });
+
+      toggleCluedoo.addEventListener('change', (e)=>{ state.includeCluedoo = !!e.target.checked; recalc(); });
+
+      // Auto-resize hooks
+      window.addEventListener('load', sendHeight);
+      window.addEventListener('resize', sendHeight);
+      new ResizeObserver(sendHeight).observe(document.body);
+
+      // Init
+      renderTiles();
+      recalc();
+    })();
+  </script>
+</section>
